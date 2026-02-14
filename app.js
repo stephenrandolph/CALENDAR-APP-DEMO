@@ -1,13 +1,17 @@
 // ===== STATE =====
 let currentDate = new Date();
-currentDate.setDate(1); // Always the 1st of the displayed month
+currentDate.setDate(1);
 let editingEventId = null;
+let miniCalDate = new Date();
+miniCalDate.setDate(1);
 
 // ===== DOM REFERENCES =====
 const monthTitle = document.getElementById('monthTitle');
 const calendarGrid = document.getElementById('calendarGrid');
 const prevBtn = document.getElementById('prevMonth');
 const nextBtn = document.getElementById('nextMonth');
+const todayBtn = document.getElementById('todayBtn');
+const createBtn = document.getElementById('createBtn');
 const modalOverlay = document.getElementById('modalOverlay');
 const modalTitle = document.getElementById('modalTitle');
 const eventForm = document.getElementById('eventForm');
@@ -19,6 +23,8 @@ const titleError = document.getElementById('titleError');
 const dateError = document.getElementById('dateError');
 const deleteBtn = document.getElementById('deleteBtn');
 const cancelBtn = document.getElementById('cancelBtn');
+const closeModalBtn = document.getElementById('closeModalBtn');
+const miniCalEl = document.getElementById('miniCal');
 
 // ===== LOCAL STORAGE CRUD =====
 const STORAGE_KEY = 'calendarEvents';
@@ -60,53 +66,67 @@ function deleteEvent(id) {
   saveEvents(events);
 }
 
+// ===== HELPERS =====
+function getTodayStr() {
+  const t = new Date();
+  return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+}
+
+function formatDateStr(year, month, day) {
+  return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
 // ===== CALENDAR RENDERING =====
 function renderCalendar() {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
-  // Update header
   monthTitle.textContent = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
-  // Calculate grid
-  const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0=Sun
+  const firstDayOfMonth = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const prevMonthDays = new Date(year, month, 0).getDate();
 
-  // Today reference
-  const today = new Date();
-  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-
-  // Get events for this month
+  const todayStr = getTodayStr();
   const events = getEvents();
 
-  // Build 42 cells (6 rows)
   calendarGrid.innerHTML = '';
   for (let i = 0; i < 42; i++) {
     const dayNum = i - firstDayOfMonth + 1;
     const cell = document.createElement('div');
     cell.className = 'day-cell';
 
-    if (dayNum < 1 || dayNum > daysInMonth) {
+    let displayNum;
+    let dateStr;
+
+    if (dayNum < 1) {
+      // Previous month days
       cell.classList.add('outside');
-      calendarGrid.appendChild(cell);
-      continue;
+      displayNum = prevMonthDays + dayNum;
+      const pm = month === 0 ? 11 : month - 1;
+      const py = month === 0 ? year - 1 : year;
+      dateStr = formatDateStr(py, pm, displayNum);
+    } else if (dayNum > daysInMonth) {
+      // Next month days
+      cell.classList.add('outside');
+      displayNum = dayNum - daysInMonth;
+      const nm = month === 11 ? 0 : month + 1;
+      const ny = month === 11 ? year + 1 : year;
+      dateStr = formatDateStr(ny, nm, displayNum);
+    } else {
+      displayNum = dayNum;
+      dateStr = formatDateStr(year, month, dayNum);
+      if (dateStr === todayStr) {
+        cell.classList.add('today');
+      }
     }
 
-    // Date string for this cell
-    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
-
-    // Today highlight
-    if (dateStr === todayStr) {
-      cell.classList.add('today');
-    }
-
-    // Day number
     const numEl = document.createElement('div');
     numEl.className = 'day-number';
-    numEl.textContent = dayNum;
+    numEl.textContent = displayNum;
     cell.appendChild(numEl);
 
-    // Event chips for this day
+    // Event chips
     const dayEvents = events.filter(e => e.date === dateStr);
     dayEvents.forEach(evt => {
       const chip = document.createElement('div');
@@ -116,38 +136,132 @@ function renderCalendar() {
       cell.appendChild(chip);
     });
 
-    // Store date on cell for add-event click
     cell.dataset.date = dateStr;
     calendarGrid.appendChild(cell);
   }
 }
 
+// ===== MINI CALENDAR =====
+function renderMiniCal() {
+  const year = miniCalDate.getFullYear();
+  const month = miniCalDate.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const prevDays = new Date(year, month, 0).getDate();
+  const todayStr = getTodayStr();
+  const selectedMonth = currentDate.getMonth();
+  const selectedYear = currentDate.getFullYear();
+
+  const monthName = miniCalDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+  let html = `
+    <div class="mini-cal-header">
+      <span class="mini-cal-title">${monthName}</span>
+      <div class="mini-cal-nav">
+        <button class="mini-cal-btn" data-dir="-1" aria-label="Previous">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7L9 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+        <button class="mini-cal-btn" data-dir="1" aria-label="Next">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3L9 7L5 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="mini-cal-grid">
+      <div class="mc-header">S</div><div class="mc-header">M</div><div class="mc-header">T</div>
+      <div class="mc-header">W</div><div class="mc-header">T</div><div class="mc-header">F</div><div class="mc-header">S</div>
+  `;
+
+  for (let i = 0; i < 42; i++) {
+    const dayNum = i - firstDay + 1;
+    let cls = 'mc-day';
+    let display;
+    let dateStr;
+
+    if (dayNum < 1) {
+      cls += ' outside';
+      display = prevDays + dayNum;
+    } else if (dayNum > daysInMonth) {
+      cls += ' outside';
+      display = dayNum - daysInMonth;
+    } else {
+      display = dayNum;
+      dateStr = formatDateStr(year, month, dayNum);
+      if (dateStr === todayStr) cls += ' today';
+      if (year === selectedYear && month === selectedMonth) {
+        // no selected highlight needed on current month
+      }
+    }
+
+    html += `<div class="${cls}" data-date="${dateStr || ''}">${display}</div>`;
+  }
+
+  html += '</div>';
+  miniCalEl.innerHTML = html;
+
+  // Mini cal navigation
+  miniCalEl.querySelectorAll('.mini-cal-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const dir = parseInt(btn.dataset.dir);
+      miniCalDate.setMonth(miniCalDate.getMonth() + dir);
+      renderMiniCal();
+    });
+  });
+
+  // Click on mini cal day to navigate main calendar
+  miniCalEl.querySelectorAll('.mc-day:not(.outside)').forEach(day => {
+    day.addEventListener('click', () => {
+      const dateStr = day.dataset.date;
+      if (dateStr) {
+        const [y, m] = dateStr.split('-').map(Number);
+        currentDate = new Date(y, m - 1, 1);
+        renderCalendar();
+      }
+    });
+  });
+}
+
 // ===== MONTH NAVIGATION =====
 prevBtn.addEventListener('click', () => {
   currentDate.setMonth(currentDate.getMonth() - 1);
+  miniCalDate = new Date(currentDate);
   renderCalendar();
+  renderMiniCal();
 });
 
 nextBtn.addEventListener('click', () => {
   currentDate.setMonth(currentDate.getMonth() + 1);
+  miniCalDate = new Date(currentDate);
   renderCalendar();
+  renderMiniCal();
+});
+
+todayBtn.addEventListener('click', () => {
+  currentDate = new Date();
+  currentDate.setDate(1);
+  miniCalDate = new Date(currentDate);
+  renderCalendar();
+  renderMiniCal();
+});
+
+// ===== CREATE BUTTON =====
+createBtn.addEventListener('click', () => {
+  const todayStr = getTodayStr();
+  openModal('add', { date: todayStr });
 });
 
 // ===== MODAL CONTROLS =====
 function openModal(mode, data = {}) {
   editingEventId = mode === 'edit' ? data.id : null;
-  modalTitle.textContent = mode === 'edit' ? 'Edit Event' : 'Add Event';
+  modalTitle.textContent = mode === 'edit' ? 'Edit Event' : 'New Event';
   deleteBtn.classList.toggle('visible', mode === 'edit');
 
-  // Fill form
   eventTitle.value = data.title || '';
   eventDate.value = data.date || '';
   eventTime.value = data.time || '';
   eventDesc.value = data.description || '';
 
-  // Clear errors
   clearErrors();
-
   modalOverlay.classList.add('open');
   eventTitle.focus();
 }
@@ -166,21 +280,17 @@ function clearErrors() {
   eventDate.classList.remove('error');
 }
 
-// ===== GRID CLICK HANDLER (event delegation) =====
+// ===== GRID CLICK HANDLER =====
 calendarGrid.addEventListener('click', (e) => {
-  // Check if an event chip was clicked
   const chip = e.target.closest('.event-chip');
   if (chip) {
     const eventId = chip.dataset.eventId;
     const events = getEvents();
     const evt = events.find(ev => ev.id === eventId);
-    if (evt) {
-      openModal('edit', evt);
-    }
+    if (evt) openModal('edit', evt);
     return;
   }
 
-  // Check if a day cell was clicked (not outside)
   const cell = e.target.closest('.day-cell');
   if (cell && !cell.classList.contains('outside')) {
     openModal('add', { date: cell.dataset.date });
@@ -197,7 +307,6 @@ eventForm.addEventListener('submit', (e) => {
   const time = eventTime.value;
   const description = eventDesc.value.trim();
 
-  // Validation
   let valid = true;
   if (!title) {
     titleError.textContent = 'Title is required';
@@ -234,6 +343,7 @@ deleteBtn.addEventListener('click', () => {
 
 // ===== MODAL CLOSE BEHAVIORS =====
 cancelBtn.addEventListener('click', closeModal);
+closeModalBtn.addEventListener('click', closeModal);
 
 modalOverlay.addEventListener('click', (e) => {
   if (e.target === modalOverlay) closeModal();
@@ -257,3 +367,4 @@ eventDate.addEventListener('input', () => {
 
 // ===== INIT =====
 renderCalendar();
+renderMiniCal();

@@ -1,0 +1,268 @@
+/* ===== CSS CUSTOM PROPERTIES ===== */
+:root {
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --danger: #ef4444;
+  --danger-hover: #dc2626;
+  --bg: #f9fafb;
+  --white: #ffffff;
+  --text: #111827;
+  --text-muted: #6b7280;
+  --border: #e5e7eb;
+  --border-light: #f3f4f6;
+  --today-bg: #eef2ff;
+  --today-ring: #4f46e5;
+  --chip-bg: #e0e7ff;
+  --chip-text: #3730a3;
+  --overlay: rgba(0, 0, 0, 0.4);
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+  --radius: 10px;
+  --transition: 0.2s ease;
+}
+
+/* ===== RESET & BASE ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  min-height: 100vh;
+  padding: 1.5rem;
+}
+
+/* ===== APP CONTAINER ===== */
+.app {
+  max-width: 960px;
+  margin: 0 auto;
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+/* ===== HEADER ===== */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.month-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.nav-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.45rem 0.9rem;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: var(--text);
+  transition: all var(--transition);
+}
+.nav-btn:hover {
+  background: var(--primary);
+  color: var(--white);
+  border-color: var(--primary);
+}
+
+/* ===== DAY HEADERS ===== */
+.day-headers {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-bottom: 1px solid var(--border);
+}
+.day-header {
+  text-align: center;
+  padding: 0.6rem 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+/* ===== CALENDAR GRID ===== */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+.day-cell {
+  min-height: 100px;
+  border-right: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
+  padding: 0.35rem;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.day-cell:nth-child(7n) { border-right: none; }
+.day-cell:hover { background: var(--border-light); }
+.day-cell.outside {
+  background: var(--border-light);
+  opacity: 0.5;
+  cursor: default;
+}
+.day-cell.outside:hover { background: var(--border-light); }
+.day-cell.today { background: var(--today-bg); }
+.day-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 50%;
+  margin-bottom: 0.2rem;
+}
+.day-cell.today .day-number {
+  background: var(--today-ring);
+  color: var(--white);
+}
+
+/* ===== EVENT CHIPS ===== */
+.event-chip {
+  background: var(--chip-bg);
+  color: var(--chip-text);
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  margin-bottom: 0.15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.event-chip:hover {
+  background: #c7d2fe;
+}
+
+/* ===== MODAL ===== */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--overlay);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.modal-overlay.open {
+  display: flex;
+}
+.modal {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  width: 100%;
+  max-width: 480px;
+  padding: 1.75rem;
+  animation: modalIn 0.2s ease;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.modal-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 1.25rem;
+}
+
+/* ===== FORM ===== */
+.form-group {
+  margin-bottom: 1rem;
+}
+.form-group label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+  color: var(--text-muted);
+}
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: var(--text);
+  outline: none;
+  transition: border-color var(--transition);
+}
+.form-group input:focus,
+.form-group textarea:focus {
+  border-color: var(--primary);
+}
+.form-group input.error,
+.form-group textarea.error {
+  border-color: var(--danger);
+}
+.error-msg {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--danger);
+  margin-top: 0.25rem;
+  min-height: 1.2em;
+}
+
+/* ===== MODAL BUTTONS ===== */
+.modal-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+.btn {
+  padding: 0.6rem 1.25rem;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.btn-save {
+  background: var(--primary);
+  color: var(--white);
+}
+.btn-save:hover { background: var(--primary-hover); }
+.btn-delete {
+  background: var(--danger);
+  color: var(--white);
+  display: none;
+}
+.btn-delete:hover { background: var(--danger-hover); }
+.btn-delete.visible { display: inline-block; }
+.btn-cancel {
+  background: var(--border);
+  color: var(--text);
+  margin-left: auto;
+}
+.btn-cancel:hover { background: #d1d5db; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  body { padding: 0.75rem; }
+  .header { padding: 1rem; }
+  .month-title { font-size: 1.15rem; }
+  .day-cell { min-height: 70px; padding: 0.25rem; }
+  .day-number { width: 24px; height: 24px; font-size: 0.75rem; }
+  .event-chip { font-size: 0.65rem; padding: 0.1rem 0.3rem; }
+  .modal { padding: 1.25rem; }
+}
+
+@media (max-width: 480px) {
+  .day-cell { min-height: 55px; }
+  .day-number { width: 20px; height: 20px; font-size: 0.7rem; }
+  .nav-btn { padding: 0.35rem 0.65rem; font-size: 0.95rem; }
+}

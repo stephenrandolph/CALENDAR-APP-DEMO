@@ -4,105 +4,128 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Calendar</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <style type="text/tailwindcss">
+    @theme {
+      --color-gcal-blue: #1a73e8;
+      --color-gcal-blue-hover: #1765cc;
+      --color-gcal-blue-light: #e8f0fe;
+      --color-gcal-red: #d93025;
+      --color-gcal-red-hover: #c5221f;
+      --color-gcal-red-light: #fce8e6;
+      --color-gcal-text: #3c4043;
+      --color-gcal-text-secondary: #5f6368;
+      --color-gcal-text-light: #70757a;
+      --color-gcal-border: #dadce0;
+      --color-gcal-border-light: #e8eaed;
+      --color-gcal-hover: #f1f3f4;
+      --color-gcal-overlay: rgba(0, 0, 0, 0.3);
+      --font-family-sans: 'Google Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
 
-  <!-- Top toolbar (Google Calendar style) -->
-  <header class="toolbar">
-    <div class="toolbar-left">
-      <svg class="toolbar-icon" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#5f6368" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      <span class="toolbar-title">Calendar</span>
+    @keyframes modal-in {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="font-sans bg-white text-gcal-text leading-normal min-h-screen flex flex-col">
+
+  <!-- Top toolbar -->
+  <header class="flex items-center px-4 py-2 border-b border-gcal-border bg-white h-16 shrink-0">
+    <div class="flex items-center gap-3 min-w-[220px] max-md:min-w-0">
+      <svg class="shrink-0" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#5f6368" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span class="text-xl font-normal text-gcal-text-secondary max-md:hidden">Calendar</span>
     </div>
-    <div class="toolbar-center">
-      <button class="today-btn" id="todayBtn">Today</button>
-      <button class="icon-btn" id="prevMonth" aria-label="Previous month">
+    <div class="flex items-center gap-2 flex-1">
+      <button class="bg-white border border-gcal-border rounded px-4 py-1.5 text-sm font-medium text-gcal-text cursor-pointer transition-all duration-150 mr-2 hover:bg-gcal-hover max-sm:hidden" id="todayBtn">Today</button>
+      <button class="bg-transparent border-none rounded-full w-9 h-9 flex items-center justify-center cursor-pointer text-gcal-text-secondary transition-colors duration-150 hover:bg-gcal-hover max-sm:w-8 max-sm:h-8" id="prevMonth" aria-label="Previous month">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
-      <button class="icon-btn" id="nextMonth" aria-label="Next month">
+      <button class="bg-transparent border-none rounded-full w-9 h-9 flex items-center justify-center cursor-pointer text-gcal-text-secondary transition-colors duration-150 hover:bg-gcal-hover max-sm:w-8 max-sm:h-8" id="nextMonth" aria-label="Next month">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M7.5 5L12.5 10L7.5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
-      <h1 class="month-title" id="monthTitle">February 2026</h1>
+      <h1 class="text-[1.375rem] font-normal text-gcal-text ml-2 whitespace-nowrap max-md:text-lg" id="monthTitle">February 2026</h1>
     </div>
-    <div class="toolbar-right">
-      <button class="create-btn" id="createBtn">
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><line x1="9" y1="3" x2="9" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="9" x2="15" y2="9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        Create
+    <div class="flex items-center">
+      <button class="flex items-center gap-2 bg-white border border-gcal-border rounded-3xl py-2 pr-5 pl-3.5 text-sm font-medium text-gcal-text cursor-pointer shadow-sm transition-all duration-150 hover:bg-gcal-hover hover:shadow-md max-md:p-2 max-md:rounded-full" id="createBtn">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" class="text-gcal-blue"><line x1="9" y1="3" x2="9" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="9" x2="15" y2="9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span class="max-md:hidden">Create</span>
       </button>
     </div>
   </header>
 
   <!-- Main layout -->
-  <div class="layout">
+  <div class="flex flex-1 overflow-hidden">
     <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-      <div class="mini-cal" id="miniCal"></div>
+    <aside class="w-[220px] border-r border-gcal-border p-4 shrink-0 overflow-y-auto max-md:hidden" id="sidebar">
+      <div class="text-xs" id="miniCal"></div>
     </aside>
 
     <!-- Calendar area -->
-    <main class="calendar-main">
+    <main class="flex-1 flex flex-col overflow-hidden">
       <!-- Day-of-week headers -->
-      <div class="day-headers">
-        <div class="day-header">SUN</div>
-        <div class="day-header">MON</div>
-        <div class="day-header">TUE</div>
-        <div class="day-header">WED</div>
-        <div class="day-header">THU</div>
-        <div class="day-header">FRI</div>
-        <div class="day-header">SAT</div>
+      <div class="grid grid-cols-7 border-b border-gcal-border shrink-0">
+        <div class="text-center py-2 text-[0.6875rem] font-medium tracking-wider text-gcal-text-light max-md:text-[0.6rem]">SUN</div>
+        <div class="text-center py-2 text-[0.6875rem] font-medium tracking-wider text-gcal-text-light max-md:text-[0.6rem]">MON</div>
+        <div class="text-center py-2 text-[0.6875rem] font-medium tracking-wider text-gcal-text-light max-md:text-[0.6rem]">TUE</div>
+        <div class="text-center py-2 text-[0.6875rem] font-medium tracking-wider text-gcal-text-light max-md:text-[0.6rem]">WED</div>
+        <div class="text-center py-2 text-[0.6875rem] font-medium tracking-wider text-gcal-text-light max-md:text-[0.6rem]">THU</div>
+        <div class="text-center py-2 text-[0.6875rem] font-medium tracking-wider text-gcal-text-light max-md:text-[0.6rem]">FRI</div>
+        <div class="text-center py-2 text-[0.6875rem] font-medium tracking-wider text-gcal-text-light max-md:text-[0.6rem]">SAT</div>
       </div>
 
       <!-- Calendar grid -->
-      <div class="calendar-grid" id="calendarGrid"></div>
+      <div class="grid grid-cols-7 grid-rows-6 flex-1" id="calendarGrid"></div>
     </main>
   </div>
 
   <!-- Event Modal -->
-  <div class="modal-overlay" id="modalOverlay">
-    <div class="modal">
-      <div class="modal-header">
-        <h2 class="modal-title" id="modalTitle">Add Event</h2>
-        <button type="button" class="modal-close" id="closeModalBtn" aria-label="Close">
+  <div class="hidden fixed inset-0 bg-gcal-overlay z-[100] items-start justify-center pt-[5vh] px-4" id="modalOverlay">
+    <div class="bg-white rounded-lg shadow-2xl w-full max-w-[450px] animate-[modal-in_0.2s_ease]">
+      <div class="flex items-center justify-between px-4 pt-4">
+        <h2 class="text-sm font-medium text-gcal-text-secondary" id="modalTitle">Add Event</h2>
+        <button type="button" class="bg-transparent border-none cursor-pointer w-8 h-8 rounded-full flex items-center justify-center text-gcal-text-secondary transition-colors duration-150 hover:bg-gcal-hover" id="closeModalBtn" aria-label="Close">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><line x1="5" y1="5" x2="15" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="15" y1="5" x2="5" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         </button>
       </div>
-      <form id="eventForm" novalidate>
-        <div class="form-group">
-          <input type="text" id="eventTitle" placeholder="Add title" class="title-input">
-          <span class="error-msg" id="titleError"></span>
+      <form id="eventForm" novalidate class="px-4 pt-2 pb-4">
+        <div class="mb-3">
+          <input type="text" id="eventTitle" placeholder="Add title" class="w-full border-0 border-b-2 border-b-gcal-border py-3 text-xl font-normal text-gcal-text outline-none transition-colors duration-150 bg-transparent placeholder:text-gcal-text-light focus:border-b-gcal-blue">
+          <span class="block text-xs text-gcal-red mt-0.5 min-h-[1em]" id="titleError"></span>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="eventDate">
+        <div class="flex gap-3">
+          <div class="mb-3 flex-1">
+            <label for="eventDate" class="flex items-center gap-1.5 text-xs font-medium mb-1 text-gcal-text-secondary">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#5f6368" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="1.5"/><line x1="5" y1="1.5" x2="5" y2="4.5"/><line x1="11" y1="1.5" x2="11" y2="4.5"/><line x1="2" y1="7" x2="14" y2="7"/></svg>
               Date
             </label>
-            <input type="date" id="eventDate">
-            <span class="error-msg" id="dateError"></span>
+            <input type="date" id="eventDate" class="w-full py-1.5 px-2 border border-gcal-border rounded text-sm text-gcal-text outline-none transition-colors duration-150 bg-white focus:border-gcal-blue">
+            <span class="block text-xs text-gcal-red mt-0.5 min-h-[1em]" id="dateError"></span>
           </div>
-          <div class="form-group">
-            <label for="eventTime">
+          <div class="mb-3 flex-1">
+            <label for="eventTime" class="flex items-center gap-1.5 text-xs font-medium mb-1 text-gcal-text-secondary">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#5f6368" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><polyline points="8,4 8,8 11,10"/></svg>
               Time
             </label>
-            <input type="time" id="eventTime">
+            <input type="time" id="eventTime" class="w-full py-1.5 px-2 border border-gcal-border rounded text-sm text-gcal-text outline-none transition-colors duration-150 bg-white focus:border-gcal-blue">
           </div>
         </div>
-        <div class="form-group">
-          <label for="eventDesc">
+        <div class="mb-3">
+          <label for="eventDesc" class="flex items-center gap-1.5 text-xs font-medium mb-1 text-gcal-text-secondary">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#5f6368" stroke-width="1.5"><line x1="2" y1="4" x2="14" y2="4"/><line x1="2" y1="8" x2="14" y2="8"/><line x1="2" y1="12" x2="10" y2="12"/></svg>
             Description
           </label>
-          <textarea id="eventDesc" rows="2" placeholder="Add description"></textarea>
+          <textarea id="eventDesc" rows="2" placeholder="Add description" class="w-full py-1.5 px-2 border border-gcal-border rounded text-sm text-gcal-text outline-none resize-y transition-colors duration-150 focus:border-gcal-blue"></textarea>
         </div>
-        <div class="modal-actions">
-          <button type="button" class="btn btn-delete" id="deleteBtn">
+        <div class="flex items-center justify-between mt-4 pt-3 border-t border-gcal-border-light">
+          <button type="button" class="hidden py-2 px-3 border-none rounded text-sm font-medium cursor-pointer transition-all duration-150 items-center gap-1.5 bg-transparent text-gcal-red hover:bg-gcal-red-light" id="deleteBtn">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="3,4 4,14 12,14 13,4"/><line x1="1" y1="4" x2="15" y2="4"/><polyline points="6,4 6,2 10,2 10,4"/></svg>
             Delete
           </button>
-          <div class="modal-actions-right">
-            <button type="button" class="btn btn-cancel" id="cancelBtn">Cancel</button>
-            <button type="submit" class="btn btn-save">Save</button>
+          <div class="flex gap-2 ml-auto">
+            <button type="button" class="py-2 px-4 border-none rounded text-sm font-medium cursor-pointer transition-all duration-150 bg-transparent text-gcal-text-secondary hover:bg-gcal-hover" id="cancelBtn">Cancel</button>
+            <button type="submit" class="py-2 px-4 border-none rounded text-sm font-medium cursor-pointer transition-all duration-150 bg-gcal-blue text-white hover:bg-gcal-blue-hover">Save</button>
           </div>
         </div>
       </form>

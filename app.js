@@ -94,21 +94,20 @@ function renderCalendar() {
   for (let i = 0; i < 42; i++) {
     const dayNum = i - firstDayOfMonth + 1;
     const cell = document.createElement('div');
-    cell.className = 'day-cell';
 
+    let isOutside = false;
+    let isToday = false;
     let displayNum;
     let dateStr;
 
     if (dayNum < 1) {
-      // Previous month days
-      cell.classList.add('outside');
+      isOutside = true;
       displayNum = prevMonthDays + dayNum;
       const pm = month === 0 ? 11 : month - 1;
       const py = month === 0 ? year - 1 : year;
       dateStr = formatDateStr(py, pm, displayNum);
     } else if (dayNum > daysInMonth) {
-      // Next month days
-      cell.classList.add('outside');
+      isOutside = true;
       displayNum = dayNum - daysInMonth;
       const nm = month === 11 ? 0 : month + 1;
       const ny = month === 11 ? year + 1 : year;
@@ -116,13 +115,30 @@ function renderCalendar() {
     } else {
       displayNum = dayNum;
       dateStr = formatDateStr(year, month, dayNum);
-      if (dateStr === todayStr) {
-        cell.classList.add('today');
-      }
+      if (dateStr === todayStr) isToday = true;
     }
 
+    // Build cell classes
+    let cellClasses = 'day-cell border-b border-gcal-border-light px-1 py-1 min-h-0 overflow-hidden transition-colors duration-150';
+    if (i % 7 !== 6) cellClasses += ' border-r';
+    if (isOutside) {
+      cellClasses += ' outside cursor-default';
+    } else {
+      cellClasses += ' cursor-pointer hover:bg-gcal-hover';
+    }
+    cell.className = cellClasses;
+
+    // Day number
     const numEl = document.createElement('div');
-    numEl.className = 'day-number';
+    let numClasses = 'flex items-center justify-center w-[26px] h-[26px] text-xs font-medium rounded-full mx-auto mb-0.5 max-md:w-[22px] max-md:h-[22px] max-md:text-[0.7rem] max-sm:w-5 max-sm:h-5 max-sm:text-[0.65rem]';
+    if (isToday) {
+      numClasses += ' bg-gcal-blue text-white font-semibold';
+    } else if (isOutside) {
+      numClasses += ' text-gcal-text-light';
+    } else {
+      numClasses += ' text-gcal-text';
+    }
+    numEl.className = numClasses;
     numEl.textContent = displayNum;
     cell.appendChild(numEl);
 
@@ -130,7 +146,7 @@ function renderCalendar() {
     const dayEvents = events.filter(e => e.date === dateStr);
     dayEvents.forEach(evt => {
       const chip = document.createElement('div');
-      chip.className = 'event-chip';
+      chip.className = 'event-chip bg-gcal-blue text-white text-[0.6875rem] font-medium px-1.5 py-px rounded mb-0.5 whitespace-nowrap overflow-hidden text-ellipsis cursor-pointer leading-snug transition-opacity duration-150 hover:opacity-85 max-md:text-[0.6rem] max-md:px-1 max-md:py-0';
       chip.textContent = evt.time ? `${evt.time} ${evt.title}` : evt.title;
       chip.dataset.eventId = evt.id;
       cell.appendChild(chip);
@@ -149,50 +165,54 @@ function renderMiniCal() {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const prevDays = new Date(year, month, 0).getDate();
   const todayStr = getTodayStr();
-  const selectedMonth = currentDate.getMonth();
-  const selectedYear = currentDate.getFullYear();
 
   const monthName = miniCalDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
   let html = `
-    <div class="mini-cal-header">
-      <span class="mini-cal-title">${monthName}</span>
-      <div class="mini-cal-nav">
-        <button class="mini-cal-btn" data-dir="-1" aria-label="Previous">
+    <div class="flex items-center justify-between mb-2 px-1">
+      <span class="text-[0.8rem] font-medium text-gcal-text cursor-default">${monthName}</span>
+      <div class="flex">
+        <button class="mini-cal-btn bg-transparent border-none cursor-pointer w-6 h-6 rounded-full flex items-center justify-center text-gcal-text-secondary transition-colors duration-150 hover:bg-gcal-hover" data-dir="-1" aria-label="Previous">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7L9 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         </button>
-        <button class="mini-cal-btn" data-dir="1" aria-label="Next">
+        <button class="mini-cal-btn bg-transparent border-none cursor-pointer w-6 h-6 rounded-full flex items-center justify-center text-gcal-text-secondary transition-colors duration-150 hover:bg-gcal-hover" data-dir="1" aria-label="Next">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3L9 7L5 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         </button>
       </div>
     </div>
-    <div class="mini-cal-grid">
-      <div class="mc-header">S</div><div class="mc-header">M</div><div class="mc-header">T</div>
-      <div class="mc-header">W</div><div class="mc-header">T</div><div class="mc-header">F</div><div class="mc-header">S</div>
+    <div class="grid grid-cols-7 text-center">
+      <div class="text-[0.65rem] font-medium text-gcal-text-light py-0.5">S</div>
+      <div class="text-[0.65rem] font-medium text-gcal-text-light py-0.5">M</div>
+      <div class="text-[0.65rem] font-medium text-gcal-text-light py-0.5">T</div>
+      <div class="text-[0.65rem] font-medium text-gcal-text-light py-0.5">W</div>
+      <div class="text-[0.65rem] font-medium text-gcal-text-light py-0.5">T</div>
+      <div class="text-[0.65rem] font-medium text-gcal-text-light py-0.5">F</div>
+      <div class="text-[0.65rem] font-medium text-gcal-text-light py-0.5">S</div>
   `;
 
   for (let i = 0; i < 42; i++) {
     const dayNum = i - firstDay + 1;
-    let cls = 'mc-day';
+    let cls = 'w-[26px] h-[26px] flex items-center justify-center rounded-full text-[0.7rem] mx-auto transition-colors duration-150';
     let display;
-    let dateStr;
+    let dateStr = '';
 
     if (dayNum < 1) {
-      cls += ' outside';
       display = prevDays + dayNum;
+      cls += ' text-gcal-text-light cursor-default';
     } else if (dayNum > daysInMonth) {
-      cls += ' outside';
       display = dayNum - daysInMonth;
+      cls += ' text-gcal-text-light cursor-default';
     } else {
       display = dayNum;
       dateStr = formatDateStr(year, month, dayNum);
-      if (dateStr === todayStr) cls += ' today';
-      if (year === selectedYear && month === selectedMonth) {
-        // no selected highlight needed on current month
+      if (dateStr === todayStr) {
+        cls += ' bg-gcal-blue text-white font-semibold cursor-pointer mc-day';
+      } else {
+        cls += ' text-gcal-text cursor-pointer hover:bg-gcal-hover mc-day';
       }
     }
 
-    html += `<div class="${cls}" data-date="${dateStr || ''}">${display}</div>`;
+    html += `<div class="${cls}" data-date="${dateStr}">${display}</div>`;
   }
 
   html += '</div>';
@@ -209,7 +229,7 @@ function renderMiniCal() {
   });
 
   // Click on mini cal day to navigate main calendar
-  miniCalEl.querySelectorAll('.mc-day:not(.outside)').forEach(day => {
+  miniCalEl.querySelectorAll('.mc-day').forEach(day => {
     day.addEventListener('click', () => {
       const dateStr = day.dataset.date;
       if (dateStr) {
@@ -254,7 +274,14 @@ createBtn.addEventListener('click', () => {
 function openModal(mode, data = {}) {
   editingEventId = mode === 'edit' ? data.id : null;
   modalTitle.textContent = mode === 'edit' ? 'Edit Event' : 'New Event';
-  deleteBtn.classList.toggle('visible', mode === 'edit');
+
+  if (mode === 'edit') {
+    deleteBtn.classList.remove('hidden');
+    deleteBtn.classList.add('inline-flex');
+  } else {
+    deleteBtn.classList.remove('inline-flex');
+    deleteBtn.classList.add('hidden');
+  }
 
   eventTitle.value = data.title || '';
   eventDate.value = data.date || '';
@@ -262,12 +289,14 @@ function openModal(mode, data = {}) {
   eventDesc.value = data.description || '';
 
   clearErrors();
-  modalOverlay.classList.add('open');
+  modalOverlay.classList.remove('hidden');
+  modalOverlay.classList.add('flex');
   eventTitle.focus();
 }
 
 function closeModal() {
-  modalOverlay.classList.remove('open');
+  modalOverlay.classList.remove('flex');
+  modalOverlay.classList.add('hidden');
   editingEventId = null;
   eventForm.reset();
   clearErrors();
@@ -276,8 +305,10 @@ function closeModal() {
 function clearErrors() {
   titleError.textContent = '';
   dateError.textContent = '';
-  eventTitle.classList.remove('error');
-  eventDate.classList.remove('error');
+  eventTitle.classList.remove('border-b-gcal-red');
+  eventTitle.classList.add('border-b-gcal-border');
+  eventDate.classList.remove('border-gcal-red');
+  eventDate.classList.add('border-gcal-border');
 }
 
 // ===== GRID CLICK HANDLER =====
@@ -310,12 +341,14 @@ eventForm.addEventListener('submit', (e) => {
   let valid = true;
   if (!title) {
     titleError.textContent = 'Title is required';
-    eventTitle.classList.add('error');
+    eventTitle.classList.remove('border-b-gcal-border');
+    eventTitle.classList.add('border-b-gcal-red');
     valid = false;
   }
   if (!date) {
     dateError.textContent = 'Date is required';
-    eventDate.classList.add('error');
+    eventDate.classList.remove('border-gcal-border');
+    eventDate.classList.add('border-gcal-red');
     valid = false;
   }
   if (!valid) return;
@@ -350,7 +383,7 @@ modalOverlay.addEventListener('click', (e) => {
 });
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && modalOverlay.classList.contains('open')) {
+  if (e.key === 'Escape' && !modalOverlay.classList.contains('hidden')) {
     closeModal();
   }
 });
@@ -358,11 +391,13 @@ document.addEventListener('keydown', (e) => {
 // ===== CLEAR ERRORS ON INPUT =====
 eventTitle.addEventListener('input', () => {
   titleError.textContent = '';
-  eventTitle.classList.remove('error');
+  eventTitle.classList.remove('border-b-gcal-red');
+  eventTitle.classList.add('border-b-gcal-border');
 });
 eventDate.addEventListener('input', () => {
   dateError.textContent = '';
-  eventDate.classList.remove('error');
+  eventDate.classList.remove('border-gcal-red');
+  eventDate.classList.add('border-gcal-border');
 });
 
 // ===== INIT =====
